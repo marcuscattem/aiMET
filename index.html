@@ -104,6 +104,19 @@
   .total .lbl{font-weight:800;letter-spacing:-.01em}
   .total .val{margin-left:auto;font-family:var(--mono);font-size:24px;font-weight:700;color:var(--amber)}
   .empty-s{color:var(--slate);font-size:13px;font-style:italic;padding:6px 0}
+  .tools{margin-top:20px}
+  .tool-toggle{width:100%;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;
+    font-weight:800;padding:12px 14px;border-radius:11px;cursor:pointer;text-align:left}
+  .tool-toggle[aria-expanded="true"]{border-color:var(--teal);box-shadow:0 0 0 2px #1F6F6B18}
+  .tool-panel{display:none;margin-top:12px}
+  .tool-panel.open{display:block}
+  .result{display:flex;align-items:baseline;gap:10px;background:var(--paper);border:1px solid var(--line);
+    border-radius:10px;padding:12px;margin:2px 0 14px}
+  .result .lbl{font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--slate)}
+  .result .val{margin-left:auto;font-family:var(--mono);font-size:22px;font-weight:800;color:var(--teal)}
+  .secondary{width:100%;border:1px solid var(--teal);background:var(--card);color:var(--teal);font:inherit;
+    font-weight:800;padding:12px;border-radius:11px;cursor:pointer}
+  .secondary:hover{background:#1F6F6B10}
   footer{margin-top:34px;color:var(--slate);font-size:11.5px;line-height:1.6}
   footer a{color:var(--teal)}
   .hint{font-size:11px;color:var(--slate);margin-top:4px;font-family:var(--mono)}
@@ -204,6 +217,24 @@
     </div>
   </div>
 
+  <div class="tools">
+    <button class="tool-toggle" id="eaToggle" type="button" aria-expanded="false"></button>
+    <div class="tool-panel card" id="eaPanel">
+      <div class="row">
+        <div class="field"><label id="lblEnergyIntake"></label>
+          <input type="number" id="energyIntake" min="0" step="1" inputmode="numeric"></div>
+        <div class="field"><label id="lblFfm"></label>
+          <input type="number" id="ffm" min="1" step="0.1" inputmode="decimal"></div>
+      </div>
+      <div class="result">
+        <span class="lbl" id="lblEaResult"></span><span class="val" id="eaResult">—</span>
+      </div>
+      <div class="field"><label id="lblFileName"></label>
+        <input type="text" id="fileName" value="aiMET"></div>
+      <button class="secondary" id="saveExcel" type="button"></button>
+    </div>
+  </div>
+
   <footer id="foot"></footer>
 </div>
 
@@ -219,6 +250,9 @@ const T = {
       search:"Type an activity", sex:"Sex", age:"Age (years)", weightMetric:"Body weight (kg)", weightImperial:"Body weight (lb)",
       dur:"Duration (minutes)", net:"Subtract resting energy (net cost)",
       add:"Add to session", session:"Session", total:"Total", empty:"No activities yet — search and add one.",
+      eaToggle:"Calculate energy availability (EA)", energyIntake:"Energy intake (kcal)", ffm:"Fat-free mass (kg)",
+      eaResult:"EA", fileName:"File name", saveExcel:"Save to Excel", sheetSummary:"Summary", sheetActivities:"Activities",
+      exerciseEnergy:"Exercise energy expenditure", eaUnit:"kcal/kg FFM",
       male:"Male", female:"Female", perMin:"kcal/min", remove:"Remove",
       bmr:"Schofield BMR", metLbl:"MET",
       foot:'Adult: kcal = MET × 3.5 × kg ÷ 200 · Older (60+): MET₆₀ uses a 2.7 ml/kg/min baseline · Youth: kcal = MET<sub>y</sub> × Schofield BMR × min. Sources: 2024 Adult & Older Adult Compendium (pacompendium.com) and Youth Compendium (Butte et al., 2018; nccor.org). Estimates only — not medical advice.'},
@@ -228,6 +262,9 @@ const T = {
       search:"Digite uma atividade", sex:"Sexo", age:"Idade (anos)", weightMetric:"Peso corporal (kg)", weightImperial:"Peso corporal (lb)",
       dur:"Duração (minutos)", net:"Descontar gasto de repouso (líquido)",
       add:"Adicionar à sessão", session:"Sessão de atividades", total:"Total", empty:"Nenhuma atividade ainda — pesquise e adicione uma.",
+      eaToggle:"Calcular disponibilidade de energia (DE)", energyIntake:"Ingestão de energia (kcal)", ffm:"Massa livre de gordura (kg)",
+      eaResult:"DE", fileName:"Nome do arquivo", saveExcel:"Salvar em Excel", sheetSummary:"Resumo", sheetActivities:"Atividades",
+      exerciseEnergy:"Gasto energético das atividades", eaUnit:"kcal/kg MLG",
       male:"Masculino", female:"Feminino", perMin:"kcal/min", remove:"Remover",
       bmr:"TMB de Schofield", metLbl:"MET",
       foot:'Adulto: kcal = MET × 3,5 × kg ÷ 200 · Idoso (60+): o MET₆₀ usa linha de base de 2,7 ml/kg/min · Jovem: kcal = MET<sub>y</sub> × TMB de Schofield × min. Fontes: Compêndio de Adultos e Idosos 2024 (pacompendium.com) e Compêndio Jovem (Butte et al., 2018; nccor.org). Apenas estimativas — não é orientação médica.'},
@@ -237,6 +274,9 @@ const T = {
       search:"Escribe una actividad", sex:"Sexo", age:"Edad (años)", weightMetric:"Peso corporal (kg)", weightImperial:"Peso corporal (lb)",
       dur:"Duración (minutos)", net:"Restar gasto en reposo (neto)",
       add:"Añadir a la sesión", session:"Sesión", total:"Total", empty:"Aún no hay actividades — busca y añade una.",
+      eaToggle:"Calcular disponibilidad energética (DE)", energyIntake:"Ingesta de energía (kcal)", ffm:"Masa libre de grasa (kg)",
+      eaResult:"DE", fileName:"Nombre del archivo", saveExcel:"Guardar en Excel", sheetSummary:"Resumen", sheetActivities:"Actividades",
+      exerciseEnergy:"Gasto energético de actividades", eaUnit:"kcal/kg MLG",
       male:"Masculino", female:"Femenino", perMin:"kcal/min", remove:"Quitar",
       bmr:"TMB de Schofield", metLbl:"MET",
       foot:'Adulto: kcal = MET × 3,5 × kg ÷ 200 · Mayor (60+): el MET₆₀ usa una base de 2,7 ml/kg/min · Joven: kcal = MET<sub>y</sub> × TMB de Schofield × min. Fuentes: Compendio de Adultos y Mayores 2024 (pacompendium.com) y Compendio Joven (Butte et al., 2018; nccor.org). Solo estimaciones — no es consejo médico.'}
@@ -326,11 +366,16 @@ function applyLang(){
   $('lblWeight').textContent=units==='imperial'?t.weightImperial:t.weightMetric; $('lblDur').textContent=t.dur;
   $('lblNet').textContent=t.net; $('add').textContent=t.add;
   $('lblSession').textContent=t.session; $('lblTotal').textContent=t.total;
+  $('eaToggle').textContent=t.eaToggle;
+  $('lblEnergyIntake').textContent=t.energyIntake; $('lblFfm').textContent=t.ffm;
+  $('lblEaResult').textContent=t.eaResult; $('lblFileName').textContent=t.fileName;
+  $('saveExcel').textContent=t.saveExcel;
   $('sex').options[0].textContent=t.male; $('sex').options[1].textContent=t.female;
   $('foot').innerHTML=t.foot;
   $('hintBMR').textContent='';
   if(picked) renderPicked();
   renderItems();
+  updateEA();
   updateBMRhint();
 }
 function updateBMRhint(){
@@ -365,7 +410,8 @@ function runSearch(){
   ac.classList.add('open');
   ac.querySelectorAll('.opt').forEach(o=>o.addEventListener('mousedown',e=>{e.preventDefault();choose(+o.dataset.i);}));
 }
-function esc(s){return s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function escAttr(s){return esc(s).replace(/'/g,'&#39;');}
 function choose(i){
   picked=acItems[i];
   $('search').value=activityName(picked);
@@ -397,7 +443,7 @@ function addItem(){
 }
 function renderItems(){
   const box=$('items');
-  if(!session.length){box.innerHTML=`<p class="empty-s">${T[lang].empty}</p>`;$('totalRow').style.display='none';setDial(0);return;}
+  if(!session.length){box.innerHTML=`<p class="empty-s">${T[lang].empty}</p>`;$('totalRow').style.display='none';setDial(0);updateEA();return;}
   box.innerHTML=session.map((s,i)=>{
     const nm=activityName(s.item);
     return `<div class="item">
@@ -410,6 +456,7 @@ function renderItems(){
   $('totalRow').style.display='flex';
   $('totalVal').textContent=Math.round(total)+' kcal';
   setDial(total);
+  updateEA();
 }
 function setDial(total){
   $('kcalBig').textContent=Math.round(total);
@@ -417,6 +464,77 @@ function setDial(total){
   const soft=Math.max(300, Math.ceil(total/100)*100*1.15);
   const frac=Math.min(total/soft,1);
   $('arc').style.strokeDashoffset = 628*(1-frac);
+}
+function sessionTotal(){
+  return session.reduce((a,s)=>a+s.kcal,0);
+}
+function eaValues(){
+  const intake=parseFloat($('energyIntake').value)||0;
+  const ffm=parseFloat($('ffm').value)||0;
+  const exercise=sessionTotal();
+  const ea=ffm>0?(intake-exercise)/ffm:null;
+  return {intake, ffm, exercise, ea};
+}
+function updateEA(){
+  const v=eaValues();
+  $('eaResult').textContent=v.ea===null?'—':`${fmt(v.ea)} ${T[lang].eaUnit}`;
+}
+function safeFileName(name){
+  return (name||'aiMET').trim().replace(/[\\/:*?"<>|]+/g,'-').replace(/\s+/g,'_')||'aiMET';
+}
+function excelCell(value){
+  return `<td>${esc(value)}</td>`;
+}
+function excelRows(rows){
+  return rows.map(row=>`<tr>${row.map(excelCell).join('')}</tr>`).join('');
+}
+function excelHtml(){
+  const t=T[lang], v=eaValues();
+  const unitLabel=units==='imperial'?t.imperial:t.metric;
+  const weightLabel=units==='imperial'?t.weightImperial:t.weightMetric;
+  const summary=[
+    ['aiMET',''],
+    [t.units,unitLabel],
+    [weightLabel,$('weight').value],
+    [t.exerciseEnergy,Math.round(v.exercise)+' kcal'],
+    [t.energyIntake,v.intake?`${v.intake} kcal`:'' ],
+    [t.ffm,v.ffm?`${v.ffm} kg`:'' ],
+    [t.eaResult,v.ea===null?'':`${fmt(v.ea)} ${t.eaUnit}`]
+  ];
+  const activities=[[t.sheetActivities,'', '', '', '', ''],['Código','Categoria','Atividade',t.metLbl,t.dur,'kcal']];
+  session.forEach(s=>activities.push([
+    s.item.code,
+    catName(s.item.cat),
+    activityName(s.item),
+    s.met,
+    s.dur,
+    Math.round(s.kcal)
+  ]));
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body>
+    <table><caption>${esc(t.sheetSummary)}</caption>${excelRows(summary)}</table>
+    <br>
+    <table><caption>${esc(t.sheetActivities)}</caption>${excelRows(activities)}</table>
+  </body></html>`;
+}
+async function saveExcel(){
+  const filename=safeFileName($('fileName').value)+'.xls';
+  const blob=new Blob([excelHtml()],{type:'application/vnd.ms-excel;charset=utf-8'});
+  if(window.showSaveFilePicker){
+    try{
+      const handle=await window.showSaveFilePicker({
+        suggestedName:filename,
+        types:[{description:'Excel',accept:{'application/vnd.ms-excel':['.xls']}}]
+      });
+      const writable=await handle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+      return;
+    }catch(e){if(e.name==='AbortError')return;}
+  }
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();
+  URL.revokeObjectURL(url);
 }
 
 /* ------------- events ------------- */
@@ -459,6 +577,13 @@ $('search').addEventListener('keydown',e=>{
 document.addEventListener('click',e=>{if(!e.target.closest('.field'))$('ac').classList.remove('open');});
 $('add').addEventListener('click',addItem);
 ['weight','sex','band'].forEach(id=>$(id).addEventListener('input',updateBMRhint));
+$('eaToggle').addEventListener('click',()=>{
+  const open=!$('eaPanel').classList.contains('open');
+  $('eaPanel').classList.toggle('open',open);
+  $('eaToggle').setAttribute('aria-expanded',open);
+});
+['energyIntake','ffm'].forEach(id=>$(id).addEventListener('input',updateEA));
+$('saveExcel').addEventListener('click',saveExcel);
 
 /* init */
 applyLang();
