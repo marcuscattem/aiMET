@@ -220,6 +220,13 @@
   <div class="tools">
     <button class="tool-toggle" id="eaToggle" type="button" aria-expanded="false"></button>
     <div class="tool-panel card" id="eaPanel">
+      <div class="unitbar">
+        <span class="unit-label" id="lblEaMode"></span>
+        <div class="seg" role="group" aria-label="Energy availability mode" id="eaModeSeg">
+          <button data-ea-mode="day" aria-pressed="true"></button>
+          <button data-ea-mode="week" aria-pressed="false"></button>
+        </div>
+      </div>
       <div class="row">
         <div class="field"><label id="lblEnergyIntake"></label>
           <input type="number" id="energyIntake" min="0" step="1" inputmode="numeric"></div>
@@ -251,8 +258,9 @@ const T = {
       dur:"Duration (minutes)", net:"Subtract resting energy (net cost)",
       add:"Add to session", session:"Session", total:"Total", empty:"No activities yet — search and add one.",
       eaToggle:"Calculate energy availability (EA)", energyIntake:"Energy intake (kcal)", ffm:"Fat-free mass (kg)",
+      eaMode:"EA mode", eaDay:"Previous day", eaWeek:"Weekly average",
       eaResult:"EA", fileName:"File name", saveExcel:"Save to Excel", sheetSummary:"Summary", sheetActivities:"Activities",
-      exerciseEnergy:"Exercise energy expenditure", eaUnit:"kcal/kg FFM",
+      exerciseEnergy:"Exercise energy used for EA", weeklyExercise:"Weekly exercise energy", eaUnit:"kcal/kg FFM",
       male:"Male", female:"Female", perMin:"kcal/min", remove:"Remove",
       bmr:"Schofield BMR", metLbl:"MET",
       foot:'Adult: kcal = MET × 3.5 × kg ÷ 200 · Older (60+): MET₆₀ uses a 2.7 ml/kg/min baseline · Youth: kcal = MET<sub>y</sub> × Schofield BMR × min. Sources: 2024 Adult & Older Adult Compendium (pacompendium.com) and Youth Compendium (Butte et al., 2018; nccor.org). Estimates only — not medical advice.'},
@@ -263,8 +271,9 @@ const T = {
       dur:"Duração (minutos)", net:"Descontar gasto de repouso (líquido)",
       add:"Adicionar à sessão", session:"Sessão de atividades", total:"Total", empty:"Nenhuma atividade ainda — pesquise e adicione uma.",
       eaToggle:"Calcular disponibilidade de energia (DE)", energyIntake:"Ingestão de energia (kcal)", ffm:"Massa livre de gordura (kg)",
+      eaMode:"Modo da DE", eaDay:"Dia anterior", eaWeek:"Média semanal",
       eaResult:"DE", fileName:"Nome do arquivo", saveExcel:"Salvar em Excel", sheetSummary:"Resumo", sheetActivities:"Atividades",
-      exerciseEnergy:"Gasto energético das atividades", eaUnit:"kcal/kg MLG",
+      exerciseEnergy:"Gasto usado na DE", weeklyExercise:"Gasto semanal registrado", eaUnit:"kcal/kg MLG",
       male:"Masculino", female:"Feminino", perMin:"kcal/min", remove:"Remover",
       bmr:"TMB de Schofield", metLbl:"MET",
       foot:'Adulto: kcal = MET × 3,5 × kg ÷ 200 · Idoso (60+): o MET₆₀ usa linha de base de 2,7 ml/kg/min · Jovem: kcal = MET<sub>y</sub> × TMB de Schofield × min. Fontes: Compêndio de Adultos e Idosos 2024 (pacompendium.com) e Compêndio Jovem (Butte et al., 2018; nccor.org). Apenas estimativas — não é orientação médica.'},
@@ -275,14 +284,15 @@ const T = {
       dur:"Duración (minutos)", net:"Restar gasto en reposo (neto)",
       add:"Añadir a la sesión", session:"Sesión", total:"Total", empty:"Aún no hay actividades — busca y añade una.",
       eaToggle:"Calcular disponibilidad energética (DE)", energyIntake:"Ingesta de energía (kcal)", ffm:"Masa libre de grasa (kg)",
+      eaMode:"Modo de DE", eaDay:"Día anterior", eaWeek:"Promedio semanal",
       eaResult:"DE", fileName:"Nombre del archivo", saveExcel:"Guardar en Excel", sheetSummary:"Resumen", sheetActivities:"Actividades",
-      exerciseEnergy:"Gasto energético de actividades", eaUnit:"kcal/kg MLG",
+      exerciseEnergy:"Gasto usado en DE", weeklyExercise:"Gasto semanal registrado", eaUnit:"kcal/kg MLG",
       male:"Masculino", female:"Femenino", perMin:"kcal/min", remove:"Quitar",
       bmr:"TMB de Schofield", metLbl:"MET",
       foot:'Adulto: kcal = MET × 3,5 × kg ÷ 200 · Mayor (60+): el MET₆₀ usa una base de 2,7 ml/kg/min · Joven: kcal = MET<sub>y</sub> × TMB de Schofield × min. Fuentes: Compendio de Adultos y Mayores 2024 (pacompendium.com) y Compendio Joven (Butte et al., 2018; nccor.org). Solo estimaciones — no es consejo médico.'}
 };
 
-let lang='pt', mode='adult', units='metric', picked=null;
+let lang='pt', mode='adult', units='metric', eaMode='day', picked=null;
 const session=[];
 
 /* ------------- helpers ------------- */
@@ -367,6 +377,9 @@ function applyLang(){
   $('lblNet').textContent=t.net; $('add').textContent=t.add;
   $('lblSession').textContent=t.session; $('lblTotal').textContent=t.total;
   $('eaToggle').textContent=t.eaToggle;
+  $('lblEaMode').textContent=t.eaMode;
+  $('eaModeSeg').querySelector('[data-ea-mode=day]').textContent=t.eaDay;
+  $('eaModeSeg').querySelector('[data-ea-mode=week]').textContent=t.eaWeek;
   $('lblEnergyIntake').textContent=t.energyIntake; $('lblFfm').textContent=t.ffm;
   $('lblEaResult').textContent=t.eaResult; $('lblFileName').textContent=t.fileName;
   $('saveExcel').textContent=t.saveExcel;
@@ -468,12 +481,17 @@ function setDial(total){
 function sessionTotal(){
   return session.reduce((a,s)=>a+s.kcal,0);
 }
+function eaExerciseEnergy(){
+  const total=sessionTotal();
+  return eaMode==='week'?total/7:total;
+}
 function eaValues(){
   const intake=parseFloat($('energyIntake').value)||0;
   const ffm=parseFloat($('ffm').value)||0;
-  const exercise=sessionTotal();
+  const weekly=sessionTotal();
+  const exercise=eaExerciseEnergy();
   const ea=ffm>0?(intake-exercise)/ffm:null;
-  return {intake, ffm, exercise, ea};
+  return {intake, ffm, exercise, weekly, ea, mode:eaMode};
 }
 function updateEA(){
   const v=eaValues();
@@ -496,6 +514,8 @@ function excelHtml(){
     ['aiMET',''],
     [t.units,unitLabel],
     [weightLabel,$('weight').value],
+    [t.eaMode,eaMode==='week'?t.eaWeek:t.eaDay],
+    [t.weeklyExercise,Math.round(v.weekly)+' kcal'],
     [t.exerciseEnergy,Math.round(v.exercise)+' kcal'],
     [t.energyIntake,v.intake?`${v.intake} kcal`:'' ],
     [t.ffm,v.ffm?`${v.ffm} kg`:'' ],
@@ -582,6 +602,11 @@ $('eaToggle').addEventListener('click',()=>{
   $('eaPanel').classList.toggle('open',open);
   $('eaToggle').setAttribute('aria-expanded',open);
 });
+$('eaModeSeg').querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{
+  eaMode=b.dataset.eaMode;
+  $('eaModeSeg').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));
+  updateEA();
+}));
 ['energyIntake','ffm'].forEach(id=>$(id).addEventListener('input',updateEA));
 $('saveExcel').addEventListener('click',saveExcel);
 
